@@ -19,15 +19,15 @@
 
 (ert-deftest ejneer-ledger-query-test-period-both ()
   (should (equal (ejneer-ledger-query-compile-filter '(period "2024-01" "2024-12"))
-                 '(:limit nil :flags ("--begin 2024-01" "--end 2024-12")))))
+                 '(:limit "[from 2024-01 until 2024-12]" :flags nil))))
 
 (ert-deftest ejneer-ledger-query-test-period-start-only ()
   (should (equal (ejneer-ledger-query-compile-filter '(period "2024-01" nil))
-                 '(:limit nil :flags ("--begin 2024-01")))))
+                 '(:limit "[from 2024-01]" :flags nil))))
 
 (ert-deftest ejneer-ledger-query-test-period-end-only ()
   (should (equal (ejneer-ledger-query-compile-filter '(period nil "2024-12"))
-                 '(:limit nil :flags ("--end 2024-12")))))
+                 '(:limit "[until 2024-12]" :flags nil))))
 
 (ert-deftest ejneer-ledger-query-test-tag-no-value ()
   (should (equal (ejneer-ledger-query-compile-filter '(tag "work"))
@@ -53,16 +53,6 @@
 							'((account "Expenses")))
                  '(:limit "account =~ /Expenses/" :flags nil))))
 
-(ert-deftest ejneer-ledger-query-test-combinator-mix-limit-flags ()
-  (should (equal (ejneer-ledger-query-filter-combinator "and"
-							'((account "Expenses") (period "2024-01" "2024-12")))
-                 '(:limit "account =~ /Expenses/" :flags ("--begin 2024-01" "--end 2024-12")))))
-
-(ert-deftest ejneer-ledger-query-test-combinator-all-flags ()
-  (should (equal (ejneer-ledger-query-filter-combinator "and"
-							'((period "2024-01" nil) (period nil "2024-12")))
-                 '(:limit nil :flags ("--begin 2024-01" "--end 2024-12")))))
-
 (ert-deftest ejneer-ledger-query-test-combinator-three-filters ()
   (should (equal (ejneer-ledger-query-filter-combinator "or"
 							'((payee "Amazon") (payee "Walmart") (payee "Target")))
@@ -80,14 +70,9 @@
 
 (ert-deftest ejneer-ledger-query-test-filter-nested ()
   (should (equal (ejneer-ledger-query-compile-filter '(and (account "Expenses")
-                                                     (or (payee "Amazon")
-                                                         (payee "Walmart"))))
+							   (or (payee "Amazon")
+                                                               (payee "Walmart"))))
                  '(:limit "(account =~ /Expenses/ and (payee =~ /Amazon/ or payee =~ /Walmart/))" :flags nil))))
-
-(ert-deftest ejneer-ledger-query-test-filter-with-period ()
-  (should (equal (ejneer-ledger-query-compile-filter '(and (account "Expenses")
-                                                     (period "2024-01" "2024-12")))
-                 '(:limit "account =~ /Expenses/" :flags ("--begin 2024-01" "--end 2024-12")))))
 
 ;; Full query tests
 (ert-deftest ejneer-ledger-query-test-query-full ()
@@ -96,7 +81,7 @@
                                             (period "2024-01" "2024-12"))
                                       :depth 2
                                       :monthly)
-                 "ledger balance --begin 2024-01 --end 2024-12 --depth 2 --monthly --limit \"account =~ /Expenses/\"")))
+                 "ledger balance --depth 2 --monthly --limit \"(account =~ /Expenses/ and [from 2024-01 until 2024-12])\"")))
 
 (ert-deftest ejneer-ledger-query-test-query-simple ()
   (should (equal (ejneer-ledger-query 'register

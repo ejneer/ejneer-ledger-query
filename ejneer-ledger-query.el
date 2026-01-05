@@ -48,10 +48,15 @@ Returns a plist with :limit and :flags keys."
      `(:limit ,(format "account =~ /%s/" pattern) :flags nil))
     (`(payee ,pattern)
      `(:limit ,(format "payee =~ /%s/" pattern) :flags nil))
-    ;; Period with both start and end
+    ;; https://ledger-cli.org/doc/ledger3.html#Period-Expressions
+    (`(period ,from nil)
+     `(:limit ,(format "[from %s]" from) :flags nil))
+    (`(period nil ,to)
+     `(:limit ,(format "[until %s]" to) :flags nil))
     (`(period ,from ,to)
-     `(:limit nil :flags ,(seq-remove #'null (list (when from (format "--begin %s" from))
-						   (when to (format "--end %s" to))))))
+     `(:limit ,(format "[from %s until %s]" from to) :flags nil))
+    (`(period ,spec)
+     `(:limit  ,(format "%s" spec) :flags nil))
     ;; Tag filters
     (`(tag ,tag)
      `(:limit ,(format "has_tag(/%s/)" tag) :flags nil))
